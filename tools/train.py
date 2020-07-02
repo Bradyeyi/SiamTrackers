@@ -222,7 +222,6 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
             # clip gradient
             clip_grad_norm_(model.parameters(), cfg.TRAIN.GRAD_CLIP)
             optimizer.step()
-
         batch_time = time.time() - end
         batch_info = {}
         batch_info['batch_time'] = average_reduce(batch_time)
@@ -252,6 +251,14 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
                             average_meter.batch_time.avg,
                             cfg.TRAIN.EPOCH * num_per_epoch)
         end = time.time()
+    end_epoch = cfg.TRAIN.EPOCH
+    file_path = cfg.TRAIN.SNAPSHOT_DIR + '/checkpoint_e%d.pth' % (end_epoch)
+    if not os.path.isfile(file_path):
+        torch.save(
+            {'epoch': end_epoch,
+             'state_dict': model.module.state_dict(),
+             'optimizer': optimizer.state_dict()},
+            cfg.TRAIN.SNAPSHOT_DIR + '/checkpoint_e%d.pth' % (end_epoch))
 
 
 def main():
@@ -265,6 +272,7 @@ def main():
             os.makedirs(cfg.TRAIN.LOG_DIR)
         init_log('global', logging.INFO)
         if cfg.TRAIN.LOG_DIR:
+
             add_file_handler('global',
                              os.path.join(cfg.TRAIN.LOG_DIR, 'logs.txt'),
                              logging.INFO)
