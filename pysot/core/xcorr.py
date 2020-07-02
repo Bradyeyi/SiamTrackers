@@ -7,8 +7,9 @@ from __future__ import unicode_literals
 
 import torch
 import torch.nn.functional as F
+import time
 
-from pysot.utils.conv2d_util import conv2d_psvf, conv2d_svf
+from pysot.utils.conv2d_util import conv2d_psvf, conv2d_svf, testCon2dPSvf, testCon2dSvf
 
 def xcorr_slow(x, kernel):
     """for loop to calculate cross correlation, slow version
@@ -61,10 +62,12 @@ def multixcorr_depthwise(x, kernel):
     x = x.view(1, batch * channel, x.size(2), x.size(3))
     kernel = kernel.view(batch * channel, 1, kernel.size(2), kernel.size(3))
     # Square variance formula depthwise correlation x^2 - y^2
-    out_1 = conv2d_svf(x, kernel, groups=batch * channel)
+    # out_1 = conv2d_svf(x, kernel, groups=batch * channel)
+    out_1 = testCon2dSvf(x, kernel, groups=batch * channel)
     out_1 = out_1.view(batch, channel, out_1.size(2), out_1.size(3))
     # Perfect Square variance formula depthwise correlation (x - y)^2
-    out_2 = conv2d_psvf(x, kernel, groups=batch * channel)
+    # out_2 = conv2d_psvf(x, kernel, groups=batch * channel)
+    out_2 = testCon2dPSvf(x, kernel, groups=batch * channel)
     out_2 = out_2.view(batch, channel, out_2.size(2), out_2.size(3))
     # normal depthwise correlation x * y
     out_3 = F.conv2d(x, kernel, groups=batch * channel)
@@ -73,9 +76,18 @@ def multixcorr_depthwise(x, kernel):
     return out
 
 if __name__ == '__main__':
-    input = torch.ones(4, 16, 31, 31)
-    kernel = torch.ones(4, 16, 7, 7)
-    # out = F.conv2d(input, kernel, groups= input.size(1))
-    out = multixcorr_depthwise(input, kernel)
-    # print(out)
-    print(out.shape)
+    input = torch.ones(1, 16, 31, 31).cuda() * 2
+    kernel = torch.ones(16, 1, 7, 7).cuda()
+    start = time.time()
+    for i in range(100):
+        out = xcorr_depthwise(input, kernel)
+    end = time.time()
+    print((end -start) / 100)
+
+    start_1 = time.time()
+    for i in range(100):
+        out = multixcorr_depthwise(input, kernel)
+    end_1 = time.time()
+    print((end_1 - start_1) / 100)
+
+
