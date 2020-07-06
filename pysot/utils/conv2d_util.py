@@ -177,35 +177,57 @@ def testCon2dSvf(input, kernel,bias=None, stride=1, padding=0, dilation=1, group
         output += bias.view(1, -1, 1, 1)
     return output
 
+def testCon2d(input, kernel,bias=None, stride=1, padding=0, dilation=1, groups=1):
+    kernel_size = tuple(kernel.shape[-2:])
+    stride = _pair(stride)
+    padding = _pair(padding)
+    dilation = _pair(dilation)
+    input = torch.pow(input, 2)
+    kernel = torch.pow(kernel, 2)
+    kernel = kernel.view(1, groups, kernel_size[0], kernel_size[1], 1, 1)
+    (bs, nch), in_sz = input.shape[:2], input.shape[2:]
+    out_sz = tuple([((i + 2 * p - d * (k - 1) - 1) // s + 1)
+                    for (i, k, d, p, s) in zip(in_sz, kernel_size, dilation, padding, stride)])
+    output = F.unfold(input, kernel_size, dilation, padding, stride)
+    out_shape = (bs, nch) + tuple(kernel_size) + out_sz
+    output = output.view(*out_shape).contiguous()
+    output = output * kernel
+    output = torch.einsum('ijklmn->ijmn', output)
+    if bias is not None:
+        output += bias.view(1, -1, 1, 1)
+    return output
+
 if __name__ == '__main__':
     input = torch.ones(1, 16, 31, 31).cuda() * 2
     kernel = torch.ones(16, 1, 7, 7).cuda()
 
-    # out = conv2d_svf(input, kernel, groups=input.size(1))
-    # print(out)
-    start = time.time()
-    for i in range(100):
-        out = testCon2dPSvf(input, kernel, groups= input.size(1))
-    end = time.time()
-    print((end - start) / 100)
-    start_4 = time.time()
-    for i in range(100):
-        out = testCon2dSvf(input, kernel, groups= input.size(1))
-    end_4 = time.time()
-    print((end_4 - start_4) / 100)
-    start1 = time.time()
-    for i in range(100):
-        out = F.conv2d(input, kernel, groups= input.size(1))
-    end_1 = time.time()
-    print((end_1 - start1) / 100)
-    start_2 = time.time()
-    for i in range(100):
-         out = conv2d_svf(input, kernel, groups=input.size(1))
-    end_2 = time.time()
-    print((end_2 - start_2) / 100)
-    start_3 = time.time()
-    for i in range(100):
-        out_1 = conv2d_psvf(input, kernel, groups=input.size(1))
-    end_3 = time.time()
-    print((end_3 - start_3) / 100)
+    out = testCon2d(input, kernel, groups=input.size(1))
+    print(out)
+    print(out.shape)
+
+    # start = time.time()
+    # for i in range(100):
+    #     out = testCon2dPSvf(input, kernel, groups= input.size(1))
+    # end = time.time()
+    # print((end - start) / 100)
+    # start_4 = time.time()
+    # for i in range(100):
+    #     out = testCon2dSvf(input, kernel, groups= input.size(1))
+    # end_4 = time.time()
+    # print((end_4 - start_4) / 100)
+    # start1 = time.time()
+    # for i in range(100):
+    #     out = F.conv2d(input, kernel, groups= input.size(1))
+    # end_1 = time.time()
+    # print((end_1 - start1) / 100)
+    # start_2 = time.time()
+    # for i in range(100):
+    #      out = conv2d_svf(input, kernel, groups=input.size(1))
+    # end_2 = time.time()
+    # print((end_2 - start_2) / 100)
+    # start_3 = time.time()
+    # for i in range(100):
+    #     out_1 = conv2d_psvf(input, kernel, groups=input.size(1))
+    # end_3 = time.time()
+    # print((end_3 - start_3) / 100)
 

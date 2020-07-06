@@ -6,15 +6,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from pysot.models.head.mask import MaskCorr, Refine
-from pysot.models.head.rpn import UPChannelRPN, DepthwiseRPN, MultiDepthwiseRPN, DepthwiseCRPN, MultiRPN
+from pysot.models.head.rpn import UPChannelRPN, DepthwiseRPN, MultiDepthwiseRPN, KernelDWConv2dRPN, MultiRPN
 from pysot.models.head.fcos import DepthwiseFCOS, CARHead, MultiFCOS
 
 RPNS = {
         'UPChannelRPN': UPChannelRPN,
         'DepthwiseRPN': DepthwiseRPN,
         'MultiRPN': MultiRPN,
-        'DepthwiseCRPN': DepthwiseCRPN,
-        'MultiDepthwiseRPN': MultiDepthwiseRPN
+        'MultiDepthwiseRPN': MultiDepthwiseRPN,
+        'KernelDWConv2dRPN': KernelDWConv2dRPN
        }
 
 FCOS = {

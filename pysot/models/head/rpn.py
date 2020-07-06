@@ -1,5 +1,8 @@
 # Copyright (c) SenseTime. All Rights Reserved.
 # 添加FCOS Head ==>> DepthwiseFCOS
+# Depthwise correlation
+# add multidepthwise correlation
+# add KernelDWConv2d instead of depthwise correlation
 
 from __future__ import absolute_import
 from __future__ import division
@@ -12,6 +15,7 @@ import torch.nn.functional as F
 
 from pysot.core.xcorr import xcorr_fast, xcorr_depthwise, multixcorr_depthwise
 from pysot.models.init_weight import init_weights
+from pysot.utils.dwconv import KernelDWConv2d
 
 class RPN(nn.Module):
     def __init__(self):
@@ -53,7 +57,7 @@ class UPChannelRPN(RPN):
 
 
 class DepthwiseXCorr(nn.Module):
-    def __init__(self, in_channels, hidden, out_channels, kernel_size=3, hidden_kernel_size=5, Center_ness=False, Glide_vertex=False):
+    def __init__(self, in_channels, hidden, out_channels, kernel_size=3, Center_ness=False, Glide_vertex=False):
         super(DepthwiseXCorr, self).__init__()
         self.center_ness = Center_ness
         self.glide_vertex = Glide_vertex
@@ -102,9 +106,8 @@ class DepthwiseXCorr(nn.Module):
     def forward(self, kernel, search):
         kernel = self.conv_kernel(kernel)
         search = self.conv_search(search)
-        feature = xcorr_depthwise_1(search, kernel)
+        feature = xcorr_depthwise(search, kernel)
         out = self.head(feature)
-
         if self.center_ness:
             center_ness = self.get_center_ness(feature)
             return out, center_ness
@@ -114,7 +117,6 @@ class DepthwiseXCorr(nn.Module):
             return out, glide_vertex, overlap_rate
 
         return out
-
 
 class DepthwiseRPN(RPN):
     def __init__(self, anchor_num=5, in_channels=256, out_channels=256):
@@ -172,18 +174,49 @@ class MultiDepthwiseRPN(RPN):
         loc = self.loc(z_f, x_f)
         return cls, loc
 
-# 1@:在RPN的基础上添加一个center-ness 分支给目标定位
-class DepthwiseCRPN(RPN):
+class KernelDWConvXcorr(nn.Module):
+    def __init__(self, in_channels, hidden, out_channels, kernel_size=3, hidden_kernel_size=5):
+        super(KernelDWConvXcorr, self).__init__()
+        self.conv_kernel = nn.Sequential(
+            nn.Conv2d(in_channels, hidden, kernel_size=kernel_size, bias=False),
+            nn.BatchNorm2d(hidden),
+            nn.ReLU(inplace=True),
+        )
+        self.conv_search = nn.Sequential(
+            nn.Conv2d(in_channels, hidden, kernel_size=kernel_size, bias=False),
+            nn.BatchNorm2d(hidden),
+            nn.ReLU(inplace=True),
+        )
+        # KernelDWConv2d instead depthwise correlation
+        self.kerneldwconv2d = KernelDWConv2d(in_channels, hidden, 5, bias=False)
+
+        # CNN
+        self.head = nn.Sequential(
+            nn.Conv2d(hidden, hidden, kernel_size=1, bias=False),
+            nn.BatchNorm2d(hidden),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden, out_channels, kernel_size=1)
+        )
+
+    def forward(self, kernel, search):
+        kernel = self.conv_kernel(kernel)
+        search = self.conv_search(search)
+        feature = self.kerneldwconv2d(search, kernel)
+        out = self.head(feature)
+        return out
+
+class KernelDWConv2dRPN(RPN):
     def __init__(self, anchor_num=5, in_channels=256, out_channels=256):
-        super(DepthwiseCRPN, self).__init__()
-        self.cls = DepthwiseXCorr(in_channels, out_channels, 2 * anchor_num)
-        self.loc = DepthwiseXCorr(in_channels, out_channels, 4 * anchor_num)
+        super(KernelDWConv2dRPN, self).__init__()
+        self.cls = KernelDWConvXcorr(in_channels, out_channels, 2 * anchor_num)
+        self.loc = KernelDWConvXcorr(in_channels, out_channels, 4 * anchor_num)
 
     def forward(self, z_f, x_f):
-        cls, cen = self.cls(z_f, x_f)
+        cls = self.cls(z_f, x_f)
         loc = self.loc(z_f, x_f)
-        return cls, cen, loc
+        return cls, loc
 
+# multi-channel RPN
 class MultiRPN(RPN):
     def __init__(self, anchor_num, in_channels, weighted=False):
         super(MultiRPN, self).__init__()
