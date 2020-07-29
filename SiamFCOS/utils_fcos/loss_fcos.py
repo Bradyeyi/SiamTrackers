@@ -100,7 +100,7 @@ class FCOSLossComputation(object):
             box_regression (list[Tensor]) batchsize * 4 * 25 * 25
             centerness (list[Tensor])
             labels (list(BoxList) Batchsize * 1 * 25 * 25
-            targets (list[BoxList]) batchsize * 4
+            reg_targets (list[BoxList]) batchsize * 4
         Returns:
             cls_loss (Tensor)
             reg_loss (Tensor)
@@ -111,6 +111,7 @@ class FCOSLossComputation(object):
         label_cls, reg_targets, num = self.prepare_targets(locations, labels, reg_targets)
         # print(reg_targets.size()) reg_targets中存在负数
         # print(reg_targets)
+        box_cls_flatten = (box_cls.permute(0, 2, 3, 1).contiguous().view(-1))
         box_regression_flatten = (box_regression.permute(0, 2, 3, 1).contiguous().view(-1, 4))
         # print(label_cls.size())  batchsize * 625
         # print(reg_targets.size()) batchsize * 625 * 4
@@ -129,10 +130,10 @@ class FCOSLossComputation(object):
         # print(labels_flatten)
         # print(box_cls)
         if cfg.FCOS.TYPE == 'CARHead':
-            cls_loss = select_cross_entropy_loss(box_cls, labels_flatten)
+            cls_loss = select_cross_entropy_loss(box_cls_flatten, labels_flatten)
         else:
             cls_loss = self.cls_loss_func(
-                box_cls,
+                box_cls_flatten,
                 labels_flatten
             )
         # print(centerness_flatten.size())

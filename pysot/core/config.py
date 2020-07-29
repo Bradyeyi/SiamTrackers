@@ -82,7 +82,7 @@ __C.TRAIN.CEN_WEIGHT = 1.2
 
 __C.TRAIN.LOC_WEIGHT = 1.2
 
-__C.TRAIN.MASK_WEIGHT = 1
+__C.TRAIN.MASK_WEIGHT = 1.0
 
 __C.TRAIN.PRINT_FREQ = 20
 
@@ -148,7 +148,8 @@ __C.DATASET.NEG = 0.2
 # improve tracking performance for otb100
 __C.DATASET.GRAY = 0.0
 
-__C.DATASET.NAMES = ('VID', 'COCO', 'DET', 'YOUTUBEBB', 'MOT')
+__C.DATASET.NAMES = ('VID', 'COCO', 'DET', 'YOUTUBEBB', 'MOT', 'LASOT', 'GOT10k',
+                     'YOUTUBEVOS', 'DAVIS')
 
 __C.DATASET.VID = CN()
 __C.DATASET.VID.ROOT = '../training_dataset/vid/crop511'
@@ -158,7 +159,6 @@ __C.DATASET.VID.NUM_USE = 100000  # repeat until reach NUM_USE
 
 # VID 评估数据集
 __C.DATASET.VID.VALANNO = '../training_dataset/vid/val.json'
-
 
 __C.DATASET.YOUTUBEBB = CN()
 __C.DATASET.YOUTUBEBB.ROOT = '../training_dataset/yt_bb/crop511'
@@ -178,7 +178,19 @@ __C.DATASET.DET.ANNO = '../training_dataset/det/train.json'
 __C.DATASET.DET.FRAME_RANGE = 1
 __C.DATASET.DET.NUM_USE = -1
 
-__C.DATASET.VIDEOS_PER_EPOCH = 600
+__C.DATASET.LASOT = CN()
+__C.DATASET.LASOT.ROOT = '../training_dataset/lasot/crop511'
+__C.DATASET.LASOT.ANNO = '../training_dataset/lasot/train.json'
+__C.DATASET.LASOT.FRAME_RANGE = 100
+__C.DATASET.LASOT.NUM_USE = 100000
+
+__C.DATASET.GOT10K = CN()
+__C.DATASET.GOT10K.ROOT = '../training_dataset/got10k/crop511'
+__C.DATASET.GOT10K.ANNO = '../training_dataset/lasot/train.json'
+__C.DATASET.GOT10K.FRAME_RANGE = 50
+__C.DATASET.GOT10K.NUM_USE = 100000
+
+__C.DATASET.VIDEOS_PER_EPOCH = 600  #600000
 # ------------------------------------------------------------------------ #
 # Backbone options
 # ------------------------------------------------------------------------ #
@@ -240,7 +252,6 @@ __C.FCOS.FOCAL_LOSS_ALPHA = 0.25
 
 __C.FCOS.IOU_LOSS_TYPE = "iou"
 
-
 # ------------------------------------------------------------------------ #
 # mask options
 # ------------------------------------------------------------------------ #
@@ -253,6 +264,11 @@ __C.MASK.MASK = False
 __C.MASK.TYPE = "MaskCorr"
 
 __C.MASK.KWARGS = CN(new_allowed=True)
+
+__C.MASK.IOU_LOSS_TYPE = "iou"
+__C.MASK.FOCAL_LOSS_GAMMA = 2.0
+
+__C.MASK.FOCAL_LOSS_ALPHA = 0.25
 
 __C.REFINE = CN()
 
@@ -278,28 +294,6 @@ __C.ANCHOR.SCALES = [8]
 
 # Anchor number
 __C.ANCHOR.ANCHOR_NUM = len(__C.ANCHOR.RATIOS) * len(__C.ANCHOR.SCALES)
-
-# ------------------------------------------------------------------------ #
-# template TSA
-# ------------------------------------------------------------------------ #
-__C.TSA = CN()
-__C.TSA.TRAIN_VIDEO_NUM = 3862
-__C.TSA.VAL_VIDEO_NUM = 555
-__C.TSA.IN_CHANNELS = 7 * 7 * 256
-__C.TSA.MODELBUILD_PATH = 'experiments/siamrpn_r50_l234_dwxcorr/model.pth'
-__C.TSA.LR = 0.0001
-__C.TSA.LR_DECAY = 0.8
-__C.TSA.VALIDATE_STEP = 5000
-__C.TSA.MAX_ITERATIONS = 100000
-__C.TSA.SUMMARY_SAVE_STEP = 1000
-__C.TSA.MODEL_SAVE_STEP = 5000
-__C.TSA.LR_UPDATE = 10000
-__C.TSA.BATCH_SIZE = 2
-__C.TSA.TIME_STEP = 8
-__C.TSA.SEQUENCE_NUM = 32
-__C.TSA.BATCH_SIZE_EVAL = 2
-__C.TSA.NUM_EPOCH_EVAL = 1073
-__C.TSA.MAX_ITERATIONS_EVAL = __C.TSA.NUM_EPOCH_EVAL // __C.TSA.BATCH_SIZE_EVAL
 
 # ------------------------------------------------------------------------ #
 # Tracker options
@@ -371,3 +365,25 @@ __C.HP_SEARCH.UAV123 = [0.39, 0.04, 0.37]
 __C.HP_SEARCH.VOT2019 = [0.41, 0.04, 0.3]
 
 __C.HP_SEARCH.LaSOT = [0.33, 0.04, 0.40]
+
+# ------------------------------------------------------------------------ #
+# template TSA
+# ------------------------------------------------------------------------ #
+__C.TSA = CN()
+__C.TSA.TRAIN_VIDEO_NUM = 3862
+__C.TSA.VAL_VIDEO_NUM = 555
+__C.TSA.IN_CHANNELS = 7 * 7 * 256
+__C.TSA.MODELBUILD_PATH = 'experiments/siamrpn_r50_l234_dwxcorr/model.pth'
+__C.TSA.LR = 0.0001
+__C.TSA.LR_DECAY = 0.8
+__C.TSA.VALIDATE_STEP = 5000
+__C.TSA.MAX_ITERATIONS = 100000
+__C.TSA.SUMMARY_SAVE_STEP = 1000
+__C.TSA.MODEL_SAVE_STEP = 5000
+__C.TSA.LR_UPDATE = 10000
+__C.TSA.BATCH_SIZE = 2
+__C.TSA.TIME_STEP = 8
+__C.TSA.SEQUENCE_NUM = 32
+__C.TSA.BATCH_SIZE_EVAL = 2
+__C.TSA.NUM_EPOCH_EVAL = 1073
+__C.TSA.MAX_ITERATIONS_EVAL = __C.TSA.NUM_EPOCH_EVAL // __C.TSA.BATCH_SIZE_EVAL

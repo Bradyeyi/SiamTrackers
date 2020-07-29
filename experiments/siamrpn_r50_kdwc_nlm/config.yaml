@@ -1,10 +1,11 @@
-META_ARC: "siamfcos_r50_dwxcorr_train"
+#Baseline
+META_ARC: "siamrpn_r50_kerneldwconv2d"
 
 BACKBONE:
     TYPE: "resnet50"
     KWARGS:
         used_layers: [3]
-    PRETRAINED: '../pretrained_models/resnet50.model'
+    PRETRAINED: 'pretrained_models/resnet50.model'
     TRAIN_LAYERS: ['layer2', 'layer3']
     TRAIN_EPOCH: 10
     LAYERS_LR: 0.1
@@ -16,26 +17,24 @@ ADJUST:
         in_channels: [1024]
         out_channels: [256]
 
-FCOS:
-    TYPE: 'DepthwiseFCOS'
+RPN:
+    TYPE: 'KernelDWConv2dRPN'
     KWARGS:
+        anchor_num: 5
         in_channels: 256
         out_channels: 256
-    IOU_LOSS_TYPE: 'iou'
-    FOCAL_LOSS_GAMMA: 2.0
-    FOCAL_LOSS_ALPHA: 0.25
 
 MASK:
     MASK: False
 
 ANCHOR:
     STRIDE: 8
-    RATIOS: [1]
+    RATIOS: [0.33, 0.5, 1, 2, 3]
     SCALES: [8]
-    ANCHOR_NUM: 1
+    ANCHOR_NUM: 5
 
 TRACK:
-    TYPE: 'SiamCARTracker'
+    TYPE: 'SiamRPNTracker'
     PENALTY_K: 0.04
     WINDOW_INFLUENCE: 0.44
     LR: 0.33
@@ -47,24 +46,23 @@ TRACK:
 TRAIN:
     EPOCH: 20
     START_EPOCH: 0
-    BATCH_SIZE: 48
-    BASE_LR: 0.005
+    BATCH_SIZE: 16
+    BASE_LR: 0.0005
     CLS_WEIGHT: 1.0
-    CEN_WEIGHT: 1.2
     LOC_WEIGHT: 1.2
     RESUME: ''
 
     LR:
         TYPE: 'log'
         KWARGS:
-            start_lr: 0.005
-            end_lr: 0.0005
+            start_lr: 0.0005 #0.005
+            end_lr: 0.00005 #0.0005
     LR_WARMUP:
         TYPE: 'step'
         EPOCH: 5
         KWARGS:
-            start_lr: 0.001
-            end_lr: 0.005
+            start_lr: 0.0001 #0.001
+            end_lr: 0.0005  #0.005
             step: 1
 
 DATASET:
@@ -72,7 +70,7 @@ DATASET:
     - 'VID'
     - 'COCO'
     - 'DET'
-    - 'YOUTUBEBB'
+# - 'YOUTUBEBB'
     TEMPLATE:
         SHIFT: 4
         SCALE: 0.05
@@ -87,5 +85,5 @@ DATASET:
         FLIP: 0.0
         COLOR: 1.0
 
-    NEG: 0.0
+    NEG: 0.2
     GRAY: 0.0

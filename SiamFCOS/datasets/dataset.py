@@ -271,9 +271,6 @@ class TrkDataset(Dataset):
         # deal neg pair
         anchor_num = len(cfg.ANCHOR.RATIOS) * len(cfg.ANCHOR.SCALES)
         cls = np.zeros((anchor_num, cfg.TRAIN.OUTPUT_SIZE, cfg.TRAIN.OUTPUT_SIZE), dtype=np.int64)
-        if neg:
-            bbox = np.array(bbox)
-            bbox[:] = 0
 
         template = template.transpose((2, 0, 1)).astype(np.float32)
         search = search.transpose((2, 0, 1)).astype(np.float32)

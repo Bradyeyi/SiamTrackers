@@ -1,4 +1,4 @@
-#2@: 完全使用one-stage Object Detector FCOS 定位目标
+#完全使用one-stage Object Detector FCOS 定位目标
 from pysot.models.head.rpn import RPN, DepthwiseXCorr
 import torch
 from torch import nn

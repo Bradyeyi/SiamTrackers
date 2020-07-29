@@ -1,8 +1,13 @@
-# Copyright (c) SenseTime. All Rights Reserved.
-# 添加FCOS Head ==>> DepthwiseFCOS
-# Depthwise correlation
+#--------------------------------------------------
+#Copyright (c) SenseTime. All Rights Reserved.
+#Licensed under the MIT License
+#refine by yeyi (18120438@bjtu.edu.cn)
+
+# add FCOS Head ==>> DepthwiseFCOS
 # add multidepthwise correlation
 # add KernelDWConv2d instead of depthwise correlation
+# add No local Module
+#--------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import division
@@ -16,6 +21,7 @@ import torch.nn.functional as F
 from pysot.core.xcorr import xcorr_fast, xcorr_depthwise, multixcorr_depthwise
 from pysot.models.init_weight import init_weights
 from pysot.utils.dwconv import KernelDWConv2d
+from pysot.utils.non_local_concatenation import  NONLocalBlock2D
 
 class RPN(nn.Module):
     def __init__(self):
@@ -190,6 +196,8 @@ class KernelDWConvXcorr(nn.Module):
         # KernelDWConv2d instead depthwise correlation
         self.kerneldwconv2d = KernelDWConv2d(in_channels, hidden, 5, bias=False)
 
+        # The No-local Module
+        self.noLocal = NONLocalBlock2D(hidden, sub_sample=True, bn_layer=True)
         # CNN
         self.head = nn.Sequential(
             nn.Conv2d(hidden, hidden, kernel_size=1, bias=False),
@@ -202,6 +210,7 @@ class KernelDWConvXcorr(nn.Module):
         kernel = self.conv_kernel(kernel)
         search = self.conv_search(search)
         feature = self.kerneldwconv2d(search, kernel)
+        feature = self.noLocal(feature)
         out = self.head(feature)
         return out
 

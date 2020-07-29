@@ -23,4 +23,5 @@ def compute_locations_per_level(h, w, stride, device):
     shift_x = shift_x.reshape(-1)
     shift_y = shift_y.reshape(-1)
     locations = torch.stack((shift_x, shift_y), dim=1) + stride +3*stride #(size_z-1)/2*size_z
+    # 32 ~ 232
     return locations

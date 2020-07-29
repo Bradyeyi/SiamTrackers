@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from pysot.models.head.mask import MaskCorr, Refine
 from pysot.models.head.rpn import UPChannelRPN, DepthwiseRPN, MultiDepthwiseRPN, KernelDWConv2dRPN, MultiRPN
 from pysot.models.head.fcos import DepthwiseFCOS, CARHead, MultiFCOS
+from pysot.models.head.polarmask_head import PolarMaskHead
 
 RPNS = {
         'UPChannelRPN': UPChannelRPN,
@@ -25,6 +26,7 @@ FCOS = {
 
 MASKS = {
          'MaskCorr': MaskCorr,
+         'PolarMaskHead': PolarMaskHead,
         }
 
 REFINE = {

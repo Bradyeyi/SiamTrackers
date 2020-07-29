@@ -1,5 +1,9 @@
 # Copyright (c) SenseTime. All Rights Reserved.
-
+"""
+2020 7.7 14:02
+author: yeyi
+add pointwise correlation
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -49,6 +53,18 @@ def xcorr_depthwise(x, kernel):
     out = out.view(batch, channel, out.size(2), out.size(3))
     return out
 
+def xcorr_pixelwise(x, kernel):
+    """
+    pixelwise cross correlation
+    ann: size of out: [batch, kernel.size(2)*kernel.size(3), x.size(2), x.size(3)]
+    """
+    batch = kernel.size(0)
+    channel = kernel.size(1)
+    kernel = kernel.view(batch, channel, kernel.size(2)*kernel.size(3), 1, 1)
+    x = x.view(batch, channel, 1, x.size(2), x.size(3))
+    out = torch.einsum('ijklm, ijnpq->inlm',(x, kernel))
+    return out
+
 def multixcorr_depthwise(x, kernel):
     """
     multi depthwise correlation
@@ -76,18 +92,13 @@ def multixcorr_depthwise(x, kernel):
     return out
 
 if __name__ == '__main__':
-    input = torch.ones(1, 16, 31, 31).cuda() * 2
-    kernel = torch.ones(16, 1, 7, 7).cuda()
+    input = torch.ones(1, 256, 31, 31).cuda() * 2
+    kernel = torch.ones(1, 256, 7, 7).cuda()
     start = time.time()
-    for i in range(100):
-        out = xcorr_depthwise(input, kernel)
+    out = xcorr_pixelwise(input, kernel)
+    print(out)
+    print(out.shape)
     end = time.time()
     print((end -start) / 100)
-
-    start_1 = time.time()
-    for i in range(100):
-        out = multixcorr_depthwise(input, kernel)
-    end_1 = time.time()
-    print((end_1 - start_1) / 100)
 
 
