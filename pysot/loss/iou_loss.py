@@ -171,7 +171,7 @@ class IOULoss(nn.Module):
         super(IOULoss, self).__init__()
         self.loss_type = loss_type
 
-    def forward(self, pred, target, weight=None):
+    def forward(self, pred, target, weight=None, avg_factor=None):
         # l t r b
         if self.loss_type == 'log_iou':
             ious = compute_iou(pred, target)
